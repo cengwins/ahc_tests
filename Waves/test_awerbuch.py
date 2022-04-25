@@ -12,21 +12,20 @@ __version__ = "0.0.1"
 
 import matplotlib.pyplot as plt
 import networkx as nx
-from ahc.Ahc import Topology
-from ahc.Ahc import ComponentModel, Event, ConnectorTypes, ComponentRegistry
-from ahc.Ahc import EventTypes
-from ahc.Channels.Channels import P2PFIFOPerfectChannel
-from ahc.LinkLayers.GenericLinkLayer import LinkLayer
-from ahc.Routing.AllSeeingEyeNetworkLayer import AllSeingEyeNetworkLayer
-from ahc.Waves.AwerbuchDFS import WaveAwerbuchComponent
-
+from adhoccomputing.GenericModel import GenericModel
+from adhoccomputing.GenericEvent import Event
+from adhoccomputing.Definitions import EventTypes, ConnectorTypes
+from adhoccomputing.Topology import Topology
+from adhoccomputing.GenericLinkLayer import GenericLinkLayer
+from adhoccomputing.GenericNetworkLayer import GenericNetworkLayer
+from adhoccomputing.DistributedAlgorithms.Waves.AwerbuchDFS import WaveAwerbuchComponent
+from adhoccomputing.GenericChannel import P2PFIFOPerfectChannel
 
 number_mesg = 0
 topo = Topology()
-registry = ComponentRegistry()
 
 
-class AdHocNode(ComponentModel):
+class AdHocNode(GenericModel):
 
     def on_init(self, eventobj: Event):
       print(f"Initializing {self.componentname}.{self.componentinstancenumber}")
@@ -38,10 +37,11 @@ class AdHocNode(ComponentModel):
       self.send_up(Event(self, EventTypes.MFRB, eventobj.eventcontent))
 
     def __init__(self, componentname, componentid):
+      super().__init__(componentname, componentid)
       # SUBCOMPONENTS
       self.appllayer = WaveAwerbuchComponent("ApplicationLayer", componentid)
-      self.netlayer = AllSeingEyeNetworkLayer("NetworkLayer", componentid)
-      self.linklayer = LinkLayer("LinkLayer", componentid)
+      self.netlayer = GenericNetworkLayer("NetworkLayer", componentid)
+      self.linklayer = GenericLinkLayer("LinkLayer", componentid)
 
       # CONNECTIONS AMONG SUBCOMPONENTS
       self.appllayer.connect_me_to_component(ConnectorTypes.DOWN, self.netlayer)
@@ -53,7 +53,7 @@ class AdHocNode(ComponentModel):
       self.linklayer.connect_me_to_component(ConnectorTypes.DOWN, self)
       self.connect_me_to_component(ConnectorTypes.UP, self.linklayer)
 
-      super().__init__(componentname, componentid)
+      
 
 
 
