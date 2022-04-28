@@ -3,10 +3,13 @@ import os
 import sys
 
 sys.path.insert(0, os.getcwd())
-from ahc.Channels.Channels import Channel
-from ahc.Snapshot.Snapshot import ChandyLamportComponentModel, LaiYangComponentModel
-from ahc.Snapshot.Snapshot import SnapshotEventTypes
-from ahc.Ahc import Event, Topology
+
+from adhoccomputing.GenericModel import GenericModel
+from adhoccomputing.Generics import Event, EventTypes, ConnectorTypes
+from adhoccomputing.Experimentation.Topology import Topology
+from adhoccomputing.Networking.LinkLayer.GenericLinkLayer import GenericLinkLayer
+from adhoccomputing.Networking.LogicalChannels.GenericChannel import GenericChannel
+from adhoccomputing.DistributedAlgorithms.Snapshot.Snapshot import ChandyLamportComponentModel, LaiYangComponentModel, SnapshotEventTypes
 import matplotlib.pyplot as plt
 import networkx as nx
 
@@ -14,7 +17,7 @@ import networkx as nx
 def main():
     topo = Topology()
     topo.construct_sender_receiver(ChandyLamportComponentModel,
-                                   ChandyLamportComponentModel, Channel)
+                                   ChandyLamportComponentModel, GenericChannel)
     nx.draw(topo.G, with_labels=True, font_weight='bold')
     plt.draw()
     topo.start()
@@ -22,7 +25,7 @@ def main():
     plt.show()
 
     topo.construct_sender_receiver(LaiYangComponentModel,
-                                   LaiYangComponentModel, Channel)
+                                   LaiYangComponentModel, GenericChannel)
     nx.draw(topo.G, with_labels=True, font_weight='bold')
     plt.draw()
     topo.start()
