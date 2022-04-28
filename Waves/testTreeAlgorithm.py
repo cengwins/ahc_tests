@@ -5,8 +5,18 @@ import matplotlib.pyplot as plt
 
 sys.path.insert(0, os.getcwd())
 
-from ahc.Channels.Channels import Channel
-from ahc.Waves.TreeAlgorithm import *
+from adhoccomputing.GenericModel import GenericModel
+from adhoccomputing.Generics import Event, EventTypes, ConnectorTypes
+from adhoccomputing.Experimentation.Topology import Topology
+from adhoccomputing.Networking.LinkLayer.GenericLinkLayer import GenericLinkLayer
+from adhoccomputing.Networking.LogicalChannels.GenericChannel import GenericChannel
+from adhoccomputing.DistributedAlgorithms.Waves.TreeAlgorithm import TreeNode
+
+
+
+def startTreeAlgorithm(treeTopology):
+  for node in treeTopology.nodes.values():
+    node.startTreeAlgorithm()
 
 def main():
 
@@ -17,11 +27,9 @@ def main():
   plt.draw()
 
   topo = Topology()
-  topo.construct_from_graph(MST, TreeNode, Channel)
-  # topo.start()
-  start = time.time()
+  topo.construct_from_graph(MST, TreeNode, GenericChannel)
+  topo.start()
   startTreeAlgorithm(topo)
-  print(f"Start Time: {start}")
 
 
   plt.show()  
