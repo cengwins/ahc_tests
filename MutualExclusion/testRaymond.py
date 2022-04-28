@@ -10,9 +10,13 @@ from time import sleep
 from itertools import combinations, groupby
 from math import cos, atan2
 
-from ahc.MutualExclusion.Raymond import MutualExclusionRaymondComponent
-from ahc.Ahc import Topology
-from ahc.Channels.Channels import P2PFIFOPerfectChannel
+from adhoccomputing.GenericModel import GenericModel
+from adhoccomputing.Generics import Event, EventTypes, ConnectorTypes
+from adhoccomputing.Experimentation.Topology import Topology
+from adhoccomputing.Networking.LinkLayer.GenericLinkLayer import GenericLinkLayer
+from adhoccomputing.Networking.LogicalChannels.GenericChannel import GenericChannel
+from adhoccomputing.DistributedAlgorithms.MutualExclusion.Raymond import MutualExclusionRaymondComponent
+
 
 
 SAVED_FILE_INDEX = 0
@@ -114,8 +118,8 @@ def requestCommand(args):
         args.remove(ARGUMENT.ALL.value)
 
         if len(args) == 0:
-            for nodeID in Topology().nodes:
-                Topology().nodes[nodeID].put()
+            for nodeID in topology.nodes:
+                topology.nodes[nodeID].put()
         else:
             helpCommand(COMMAND.REQUEST)
     else:
@@ -123,7 +127,7 @@ def requestCommand(args):
         for arg in args:
             try:
                 nodeID = int(arg)
-                node = Topology().nodes[nodeID]
+                node = topology.nodes[nodeID]
                 nodes.append(node)
             except KeyError:
                 print(f"Node {nodeID} does not exist in the topology.")
@@ -242,8 +246,8 @@ def getCommand(args):
             isRequest = isToken = isPrivilege = isForwarded = True
 
         if len(args) == 0:
-            for nodeID in Topology().nodes:
-                node = Topology().nodes[nodeID]
+            for nodeID in topology.nodes:
+                node = topology.nodes[nodeID]
                 print(getNodeInformation(node, isRequest, isToken, isPrivilege, isForwarded))
         else:
             helpCommand(COMMAND.GET)
@@ -252,16 +256,16 @@ def getCommand(args):
             isRequest = isToken = isPrivilege = isForwarded = True
 
         if len(args) == 0:
-            N = len(Topology().nodes)
+            N = len(topology.nodes)
             node = MutualExclusionRaymondComponent("node", -1)
 
-            for nodeID in Topology().nodes:
-                node.privilegeCount += Topology().nodes[nodeID].privilegeCount
-                node.sentRequestCount += Topology().nodes[nodeID].sentRequestCount
-                node.sentTokenCount += Topology().nodes[nodeID].sentTokenCount
-                node.receivedRequestCount += Topology().nodes[nodeID].receivedRequestCount
-                node.receivedTokenCount += Topology().nodes[nodeID].receivedTokenCount
-                node.forwardedMessageCount += Topology().nodes[nodeID].forwardedMessageCount
+            for nodeID in topology.nodes:
+                node.privilegeCount += topology.nodes[nodeID].privilegeCount
+                node.sentRequestCount += topology.nodes[nodeID].sentRequestCount
+                node.sentTokenCount += topology.nodes[nodeID].sentTokenCount
+                node.receivedRequestCount += topology.nodes[nodeID].receivedRequestCount
+                node.receivedTokenCount += topology.nodes[nodeID].receivedTokenCount
+                node.forwardedMessageCount += topology.nodes[nodeID].forwardedMessageCount
             totalMessageCount = node.receivedRequestCount + node.receivedTokenCount
 
             if isTotal:
@@ -283,7 +287,7 @@ def getCommand(args):
             if len(args) == 1:
                 try:
                     nodeID = int(args[0])
-                    node = Topology().nodes[nodeID]
+                    node = topology.nodes[nodeID]
                     print(getNodeInformation(node, isRequest, isToken, isPrivilege, isForwarded))
                 except KeyError:
                     print(f"Node {nodeID} does not exist in the topology.")
@@ -298,16 +302,16 @@ def drawGraph(overwrite=False):
     global drawnGraphNodeColors, drawnGraphNodeLabels, drawnGraphNodeLineWidths, drawnGraphNodeEdgeColors, \
         labelDistance, SAVED_FILE_INDEX, SAVING_ENABLED
 
-    G = Topology().G
-    mstG = nx.minimum_spanning_tree(Topology().G)
+    G = topology.G
+    mstG = nx.minimum_spanning_tree(topology.G)
     pos = nx.drawing.nx_pydot.graphviz_layout(mstG, prog="neato", root=mstG.nodes[0])  # neato twopi sfdp
 
     nodeColors = []
     nodeLabels = []
     nodeLineWidths = []
     nodeEdgeColors = []
-    for nodeID in Topology().nodes:
-        node = Topology().nodes[nodeID]
+    for nodeID in topology.nodes:
+        node = topology.nodes[nodeID]
         label = f"[{','.join([str(i) for i in node.queue])}]"
         mstG.nodes[nodeID]['label'] = label
         nodeLabels.append(label)
@@ -400,14 +404,15 @@ def getUserInput():
         userInput = input("User Command: \n")
         processUserCommand(userInput)
 
+topology = Topology()
 def main():
     global labelDistance
 
     G = connectedBinomialGraph(5, 0.2, seed=5)
     labelDistance = len(G.nodes)
 
-    topology = Topology()
-    topology.construct_from_graph(G, MutualExclusionRaymondComponent, P2PFIFOPerfectChannel)
+
+    topology.construct_from_graph(G, MutualExclusionRaymondComponent, GenericChannel)
     topology.start()
 
     if os.path.exists(SAVE_PATH):
