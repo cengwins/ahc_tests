@@ -12,11 +12,11 @@ from adhoccomputing.Experimentation.Topology import Topology
 from adhoccomputing.Networking.PhysicalLayer.UsrpB210OfdmFlexFramePhy import  UsrpB210OfdmFlexFramePhy
 from adhoccomputing.Networking.MacProtocol.CSMA import MacCsmaPPersistent, MacCsmaPPersistentConfigurationParameters
 
-registry = ComponentRegistry()
-from ahc.Channels.Channels import FIFOBroadcastPerfectChannel
-from ahc.EttusUsrp.UhdUtils import AhcUhdUtils
+#registry = ComponentRegistry()
+#from ahc.Channels.Channels import FIFOBroadcastPerfectChannel
+#from ahc.EttusUsrp.UhdUtils import AhcUhdUtils
 
-framers = FramerObjects()
+#framers = FramerObjects()
 
 
 # define your own message types
@@ -91,7 +91,7 @@ class UsrpNode(GenericModel):
         self.components.append(self.appl)
         self.components.append(self.phy)
         self.components.append(self.mac)
-        
+
         # CONNECTIONS AMONG SUBCOMPONENTS
         self.appl.connect_me_to_component(ConnectorTypes.UP, self) #Not required if nodemodel will do nothing
         self.appl.connect_me_to_component(ConnectorTypes.DOWN, self.mac)

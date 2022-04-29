@@ -5,17 +5,12 @@ from enum import Enum
 from pickle import FALSE
 sys.path.insert(0, os.getcwd())
 
-from ahc.Ahc import ComponentModel, Event, ConnectorTypes, Topology, EventTypes, GenericMessage, GenericMessageHeader, FramerObjects
-from ahc.Ahc import ComponentRegistry
-from ahc.PhysicalLayers.UsrpB210OfdmFlexFramePhy import  UsrpB210OfdmFlexFramePhy
-from ahc.MAC.CSMA import MacCsmaPPersistent,MacCsmaPPersistentConfigurationParameters
 
-registry = ComponentRegistry()
-from ahc.Channels.Channels import FIFOBroadcastPerfectChannel
-from ahc.EttusUsrp.UhdUtils import AhcUhdUtils
-
-framers = FramerObjects()
-
+from adhoccomputing.GenericModel import GenericModel
+from adhoccomputing.Generics import Event, EventTypes, ConnectorTypes, GenericMessageHeader
+from adhoccomputing.Experimentation.Topology import Topology
+from adhoccomputing.Networking.PhysicalLayer.UsrpB210OfdmFlexFramePhy import  UsrpB210OfdmFlexFramePhy
+from adhoccomputing.Networking.MacProtocol.CSMA import MacCsmaPPersistent, MacCsmaPPersistentConfigurationParameters
 
 # define your own message types
 class ApplicationLayerMessageTypes(Enum):
@@ -31,12 +26,12 @@ class UsrpApplicationLayerEventTypes(Enum):
     STARTBROADCAST = "startbroadcast"
 
 
-class UsrpApplicationLayer(ComponentModel):
+class UsrpApplicationLayer(GenericModel):
     def on_init(self, eventobj: Event):
         self.counter = 0
     
-    def __init__(self, componentname, componentid):
-        super().__init__(componentname, componentid)
+    def __init__(self, componentname, componentinstancenumber, context=None, configurationparameters=None, num_worker_threads=1, topology=None):
+        super().__init__(componentname, componentinstancenumber, context, configurationparameters, num_worker_threads, topology)
         self.eventhandlers[UsrpApplicationLayerEventTypes.STARTBROADCAST] = self.on_startbroadcast
 
     def on_message_from_top(self, eventobj: Event):
@@ -71,19 +66,25 @@ class UsrpApplicationLayer(ComponentModel):
         #print("Starting broadcast")
     
          
-class UsrpNode(ComponentModel):
+class UsrpNode(GenericModel):
     counter = 0
     def on_init(self, eventobj: Event):
         pass
-      
-    def __init__(self, componentname, componentid):
+    
+    def __init__(self, componentname, componentinstancenumber, context=None, configurationparameters=None, num_worker_threads=1, topology=None):
+        super().__init__(componentname, componentinstancenumber, context, configurationparameters, num_worker_threads, topology)
         # SUBCOMPONENTS
         
         macconfig = MacCsmaPPersistentConfigurationParameters(0.5)
         
-        self.appl = UsrpApplicationLayer("UsrpApplicationLayer", componentid)
-        self.phy = UsrpB210OfdmFlexFramePhy("UsrpB210OfdmFlexFramePhy", componentid)
-        self.mac = MacCsmaPPersistent("MacCsmaPPersistent", componentid,  configurationparameters=macconfig)
+        self.appl = UsrpApplicationLayer("UsrpApplicationLayer", componentinstancenumber, topology=topology)
+        self.phy = UsrpB210OfdmFlexFramePhy("UsrpB210OfdmFlexFramePhy", componentinstancenumber, topology=topology)
+        self.mac = MacCsmaPPersistent("MacCsmaPPersistent", componentinstancenumber,  configurationparameters=macconfig, topology=topology)
+        
+        self.components.append(self.appl)
+        self.components.append(self.phy)
+        self.components.append(self.mac)
+        
         
         # CONNECTIONS AMONG SUBCOMPONENTS
         self.appl.connect_me_to_component(ConnectorTypes.UP, self) #Not required if nodemodel will do nothing
@@ -99,8 +100,6 @@ class UsrpNode(ComponentModel):
         # self.phy.connect_me_to_component(ConnectorTypes.DOWN, self)
         # self.connect_me_to_component(ConnectorTypes.DOWN, self.appl)
     
-        super().__init__(componentname, componentid)
-
 def main(argv):
     id = 0 #default 0 if arg -i is not given
     try:
