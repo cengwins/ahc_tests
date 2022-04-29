@@ -1,5 +1,10 @@
 image: cengwins/ahc-uhd-image:1.2
-command: python3 main.py
+command: 
+  git clone https://github.com/cengwins/ahc.git &&
+  cd ahc &&
+  pip3 install . &&
+  cd .. &&
+  python3 main.py
  
   # python3 General/testcomposition.py &&
   # python3 General/test.py &&
