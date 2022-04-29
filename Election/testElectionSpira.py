@@ -7,18 +7,20 @@ sys.path.insert(0, os.getcwd())
 
 import matplotlib.pyplot as plt
 
-from ahc.Ahc import ComponentModel, Event, ConnectorTypes, Topology
-from ahc.Ahc import ComponentRegistry
-from ahc.Ahc import EventTypes
-from ahc.Channels.Channels import P2PFIFOPerfectChannel
-from ahc.LinkLayers.GenericLinkLayer import LinkLayer
-from ahc.Routing.AllSeeingEyeNetworkLayer import AllSeingEyeNetworkLayer
-from ahc.Election.Spira import ElectionSpiraComponent
-
-registry = ComponentRegistry()
 
 
-class AdHocNode(ComponentModel):
+
+from adhoccomputing.GenericModel import GenericModel
+from adhoccomputing.Generics import Event, EventTypes, ConnectorTypes
+from adhoccomputing.Experimentation.Topology import Topology
+from adhoccomputing.Networking.LinkLayer.GenericLinkLayer import GenericLinkLayer
+from adhoccomputing.Networking.NetworkLayer.GenericNetworkLayer import GenericNetworkLayer
+from adhoccomputing.Networking.LogicalChannels.GenericChannel import GenericChannel
+from adhoccomputing.DistributedAlgorithms.Election.Spira import ElectionSpiraComponent
+
+
+
+class AdHocNode(GenericModel):
 
     def on_init(self, eventobj: Event):
         print(f"Initializing {self.componentname}.{self.componentinstancenumber}")
@@ -32,13 +34,19 @@ class AdHocNode(ComponentModel):
     def initialize(self):
         self.appllayer.initialize_connect()
 
-    def __init__(self, componentname, componentid):
+    def __init__(self, componentname, componentinstancenumber, context=None, configurationparameters=None, num_worker_threads=1, topology=None):
+        super().__init__(componentname, componentinstancenumber, context, configurationparameters, num_worker_threads, topology)
         # SUBCOMPONENTS
-        self.appllayer = ElectionSpiraComponent("ElectionSpiraComponent", componentid)
-        self.netlayer = AllSeingEyeNetworkLayer("NetworkLayer", componentid)
-        self.linklayer = LinkLayer("LinkLayer", componentid)
+        self.appllayer = ElectionSpiraComponent("ElectionSpiraComponent", componentinstancenumber, topology=topology)
+        self.netlayer = GenericNetworkLayer("NetworkLayer", componentinstancenumber, topology=topology)
+        self.linklayer = GenericLinkLayer("LinkLayer", componentinstancenumber, topology=topology)
         # self.failuredetect = GenericFailureDetector("FailureDetector", componentid)
 
+        self.components.append(self.appllayer)
+        self.components.append(self.netlayer)
+        self.components.append(self.linklayer)
+
+    
         # CONNECTIONS AMONG SUBCOMPONENTS
         self.appllayer.connect_me_to_component(ConnectorTypes.DOWN, self.netlayer)
         # self.failuredetect.connectMeToComponent(PortNames.DOWN, self.netlayer)
@@ -50,7 +58,7 @@ class AdHocNode(ComponentModel):
         # Connect the bottom component to the composite component....
         self.linklayer.connect_me_to_component(ConnectorTypes.DOWN, self)
         self.connect_me_to_component(ConnectorTypes.UP, self.linklayer)
-        super().__init__(componentname, componentid)
+        
 
 
 topo = Topology()
@@ -77,7 +85,7 @@ def main():
         start_time = time.time()
 
         g = Grid(i, ax=axes[0])
-        topo.construct_from_graph(g.G, AdHocNode, P2PFIFOPerfectChannel)
+        topo.construct_from_graph(g.G, AdHocNode, GenericChannel)
         topo.start()
         for i in list(topo.nodes):
             topo.nodes[i].initialize()
