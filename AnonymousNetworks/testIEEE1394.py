@@ -9,10 +9,10 @@ from time import sleep
 
 import matplotlib.pyplot as plt
 import networkx as nx
-from ahc.Ahc import Topology
-from ahc.Channels.Channels import P2PFIFOPerfectChannel
 
-from ahc.AnonymousNetworks.IEEE1394 import FireWireNode
+from adhoccomputing.Experimentation.Topology import Topology
+from adhoccomputing.Networking.LogicalChannels.GenericChannel import GenericChannel
+from adhoccomputing.DistributedAlgorithms.AnonymousNetworks.IEEE1394 import FireWireNode
 
 ACTIVE_NODE_COLOUR = "#98971a"
 PASSIVE_NODE_COLOUR = "#7c6f64"
@@ -34,7 +34,7 @@ def main():
     fig = plt.figure(num=0)
 
     topology = Topology()
-    topology.construct_from_graph(G, FireWireNode, P2PFIFOPerfectChannel)
+    topology.construct_from_graph(G, FireWireNode, GenericChannel)
     topology.start()
 
     FireWireNode.callback = update
@@ -44,11 +44,11 @@ def main():
         update.wait()
         node_colours = list()
 
-        G = Topology().G
+        G = topology.G
         pos = nx.spectral_layout(G, center=(0, 0))
 
-        for nodeID in Topology().nodes:
-            node = Topology().nodes[nodeID]
+        for nodeID in topology.nodes:
+            node = topology.nodes[nodeID]
 
             if node.is_leader:
                 node_colours.append(LEADER_NODE_COLOUR)

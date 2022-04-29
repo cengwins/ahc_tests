@@ -10,10 +10,12 @@ from time import sleep
 
 import matplotlib.pyplot as plt
 import networkx as nx
-from ahc.Ahc import Topology
-from ahc.Channels.Channels import P2PFIFOPerfectChannel
 
-from ahc.AnonymousNetworks.ItaiRodeh import ItaiRodehNode, State
+
+from adhoccomputing.Experimentation.Topology import Topology
+from adhoccomputing.Networking.LogicalChannels.GenericChannel import GenericChannel
+
+from adhoccomputing.DistributedAlgorithms.AnonymousNetworks.ItaiRodeh import ItaiRodehNode, State
 
 ACTIVE_NODE_COLOUR = "#ff0000"
 PASSIVE_NODE_COLOUR = "#e0e0e0"
@@ -32,7 +34,7 @@ def main():
     fig = plt.figure(num=0)
 
     topology = Topology()
-    topology.construct_from_graph(G, ItaiRodehNode, P2PFIFOPerfectChannel)
+    topology.construct_from_graph(G, ItaiRodehNode, GenericChannel)
     topology.start()
     ItaiRodehNode.ring_size = n
 
@@ -46,11 +48,11 @@ def main():
         assumed_ids = list()
         node_colours = list()
 
-        G = Topology().G
+        G = topology.G
         pos = nx.circular_layout(G, center=(0, 0))
 
-        for nodeID in Topology().nodes:
-            node = Topology().nodes[nodeID]
+        for nodeID in topology.nodes:
+            node = topology.nodes[nodeID]
             G.nodes[nodeID]["id_p"] = node.id_p
             assumed_ids.append(node.id_p)
 
