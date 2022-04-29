@@ -44,7 +44,6 @@ class SenderReceiver(GenericModel):
 
 def main():
   topo = Topology()
-
   topo.construct_sender_receiver(SenderReceiver, SenderReceiver, GenericChannel)
   nx.draw(topo.G, with_labels=True, font_weight='bold')
   plt.draw()
