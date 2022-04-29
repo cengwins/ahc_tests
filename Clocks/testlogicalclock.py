@@ -5,16 +5,17 @@ import sys
 sys.path.insert(0, os.getcwd())
 import networkx as nx
 
-from ahc.Ahc import ComponentModel, Event, ConnectorTypes, Topology
-from ahc.Ahc import EventTypes
-from ahc.Channels.Channels import P2PFIFOPerfectChannel
-from ahc.LinkLayers.GenericLinkLayer import LinkLayer
-from ahc.Routing.AllSeeingEyeNetworkLayer import AllSeingEyeNetworkLayer
+from adhoccomputing.GenericModel import GenericModel
+from adhoccomputing.Generics import Event, EventTypes, ConnectorTypes
+from adhoccomputing.Experimentation.Topology import Topology
+from adhoccomputing.Networking.LinkLayer.GenericLinkLayer import GenericLinkLayer
+from adhoccomputing.Networking.NetworkLayer.GenericNetworkLayer import GenericNetworkLayer
+from adhoccomputing.Networking.LogicalChannels.GenericChannel import GenericChannel
 
-from ahc.Clocks.LogicalClocks import VectorClock
+from adhoccomputing.DistributedAlgorithms.Clocks.LogicalClocks import VectorClock
 
 
-class ApplicationLayerComponent(ComponentModel):
+class ApplicationLayerComponent(GenericModel):
 
   def on_init(self, eventobj: Event):
     #print(f"Initializing {self.componentname}.{self.componentinstancenumber}")
@@ -26,11 +27,11 @@ class ApplicationLayerComponent(ComponentModel):
     time.sleep(randdelay)
     self.send_down(Event(self, EventTypes.MFRT, None))  
 
-  def __init__(self, componentname, componentinstancenumber): 
-    super().__init__(componentname, componentinstancenumber)
+  def __init__(self, componentname, componentinstancenumber, context=None, configurationparameters=None, num_worker_threads=1, topology=None):
+      super().__init__(componentname, componentinstancenumber, context, configurationparameters, num_worker_threads, topology)
  
 
-class AdHocNode(ComponentModel):
+class AdHocNode(GenericModel):
 
   def on_init(self, eventobj: Event):
     #print(f"Initializing {self.componentname}.{self.componentinstancenumber}")
@@ -41,14 +42,20 @@ class AdHocNode(ComponentModel):
   def on_message_from_bottom(self, eventobj: Event):
     self.send_up(Event(self, EventTypes.MFRB, eventobj.eventcontent))
 
-  def __init__(self, componentname, componentid):
-    super().__init__(componentname, componentid)
+
+  def __init__(self, componentname, componentinstancenumber, context=None, configurationparameters=None, num_worker_threads=1, topology=None):
+    super().__init__(componentname, componentinstancenumber, context, configurationparameters, num_worker_threads, topology)
 
     # SUBCOMPONENTSc
-    self.appllayer = ApplicationLayerComponent("ApplicationLayer", componentid)
-    self.middleware = VectorClock("VectorClock ", componentid)
-    self.netlayer = AllSeingEyeNetworkLayer("NetworkLayer", componentid)
-    self.linklayer = LinkLayer("LinkLayer", componentid)
+    self.appllayer = ApplicationLayerComponent("ApplicationLayer", componentinstancenumber, topology=topology)
+    self.middleware = VectorClock("VectorClock ", componentinstancenumber, topology=topology)
+    self.netlayer = GenericNetworkLayer("NetworkLayer", componentinstancenumber, topology=topology)
+    self.linklayer = GenericLinkLayer("LinkLayer", componentinstancenumber, topology=topology)
+
+    self.components.append(self.appllayer)
+    self.components.append(self.middleware)
+    self.components.append(self.netlayer)
+    self.components.append(self.linklayer)
 
     # CONNECTIONS AMONG SUBCOMPONENTS
     self.appllayer.connect_me_to_component(ConnectorTypes.DOWN, self.middleware)
@@ -67,7 +74,7 @@ def main():
   
   G = nx.random_geometric_graph(3, 1)
   topo = Topology()
-  topo.construct_from_graph(G, AdHocNode, P2PFIFOPerfectChannel)
+  topo.construct_from_graph(G, AdHocNode, GenericChannel)
 
   
   topo.start()
