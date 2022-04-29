@@ -3,12 +3,14 @@ import sys
 import time
 sys.path.insert(0, os.getcwd())
 
-from ahc.Ahc import ComponentModel, Event, ConnectorTypes, Topology, EventTypes
-from ahc.Ahc import ComponentRegistry
+from adhoccomputing.GenericModel import GenericModel
+from adhoccomputing.Generics import Event, EventTypes, ConnectorTypes
+from adhoccomputing.Experimentation.Topology import Topology
 
-registry = ComponentRegistry()
 
-class A(ComponentModel):
+
+
+class A(GenericModel):
   def on_init(self, eventobj: Event):
     evt = Event(self, EventTypes.MFRT, "A to lower layer")
     self.send_down(evt)
@@ -16,7 +18,7 @@ class A(ComponentModel):
   def on_message_from_bottom(self, eventobj: Event):
     print(f"I am {self.componentname}, eventcontent={eventobj.eventcontent}\n")
 
-class B(ComponentModel):
+class B(GenericModel):
   def on_init(self, eventobj: Event):
     evt = Event(self, EventTypes.MFRP, "B to peers")
     self.send_peer(evt)
@@ -32,7 +34,7 @@ class B(ComponentModel):
   def on_message_from_peer(self, eventobj: Event):
     print(f"I am {self.componentname}, got message from peer, eventcontent={eventobj.eventcontent}\n")
 
-class N(ComponentModel):
+class N(GenericModel):
   def on_message_from_top(self, eventobj: Event):
     print(f"I am {self.componentname}, eventcontent={eventobj.eventcontent}\n")
     evt = Event(self, EventTypes.MFRT, "N to lower layer")
@@ -44,13 +46,13 @@ class N(ComponentModel):
   def on_message_from_peer(self, eventobj: Event):
     print(f"I am {self.componentname}, got message from peer, eventcontent={eventobj.eventcontent}\n")
 
-class L(ComponentModel):
+class L(GenericModel):
   def on_message_from_top(self, eventobj: Event):
     print(f"I am {self.componentname}, eventcontent={eventobj.eventcontent}")
     evt = Event(self, EventTypes.MFRB, "L to higher layer")
     self.send_up(evt)
 
-class Node(ComponentModel):
+class Node(GenericModel):
   def on_init(self, eventobj: Event):
     pass
 
@@ -60,12 +62,18 @@ class Node(ComponentModel):
   def on_message_from_bottom(self, eventobj: Event):
     self.send_up(Event(self, EventTypes.MFRB, eventobj.eventcontent))
 
-  def __init__(self, componentname, componentid):
+  def __init__(self, componentname, componentinstancenumber, context=None, configurationparameters=None, num_worker_threads=1, topology=None):
+    super().__init__(componentname, componentinstancenumber, context, configurationparameters, num_worker_threads, topology)
     # SUBCOMPONENTS
-    self.A = A("A", componentid)
-    self.N = N("N", componentid)
-    self.B = B("B", componentid)
-    self.L = L("L", componentid)
+    self.A = A("A", componentinstancenumber, topology=topology)
+    self.N = N("N", componentinstancenumber, topology=topology)
+    self.B = B("B", componentinstancenumber, topology=topology)
+    self.L = L("L", componentinstancenumber, topology=topology)
+
+    self.components.append(self.A)
+    self.components.append(self.N)
+    self.components.append(self.B)
+    self.components.append(self.L)
 
     # CONNECTIONS AMONG SUBCOMPONENTS
     self.A.connect_me_to_component(ConnectorTypes.DOWN, self.B)
@@ -86,8 +94,6 @@ class Node(ComponentModel):
     # Connect the bottom component to the composite component....
     self.L.connect_me_to_component(ConnectorTypes.DOWN, self)
     self.connect_me_to_component(ConnectorTypes.UP, self.L)
-
-    super().__init__(componentname, componentid)
 
 def main():
   topo = Topology();
