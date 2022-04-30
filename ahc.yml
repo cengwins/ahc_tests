@@ -5,7 +5,7 @@ command:
   pip3 install . &&
   cd .. &&
   python3 main.py &&
-  python3 General/testcomposition.py &&
+  python3 General/testcomposition.py 
   # python3 General/test.py &&
   # python3 General/testnx.py &&
   # python3 General/testchannels.py &&
