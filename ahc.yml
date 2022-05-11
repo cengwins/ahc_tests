@@ -1,4 +1,4 @@
-image: cengwins/ahc-uhd-image
+image: cengwins/ahc-uhd-image:latest
 command: 
   git clone https://github.com/cengwins/ahc.git &&
   cd ahc &&
